@@ -37,16 +37,59 @@
 .plotly-chart {
     border-radius: 10px;
     overflow: hidden;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    background: white;
 }
 
 /* Solution card enhancements */
 .solution-card {
     border-left: 4px solid transparent;
     transition: all 0.3s ease;
+    border-radius: 10px;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.05);
 }
 
 .solution-card:hover {
     border-left-color: var(--secondary-color);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+.card {
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.card-header {
+    border-bottom-color: #e0e0e0;
+}
+
+.card-header.bg-primary,
+.card-header.bg-success,
+.card-header.bg-warning,
+.card-header.bg-info,
+.card-header.bg-secondary,
+.card-header.bg-danger {
+    background-size: 200% 100%;
+    color: #fff;
+}
+
+.card-header.bg-primary {
+    background-image: linear-gradient(135deg, #3498db 0%, #9b59b6 100%);
+}
+.card-header.bg-success {
+    background-image: linear-gradient(135deg, #28a745 0%, #1abc9c 100%);
+}
+.card-header.bg-warning {
+    background-image: linear-gradient(135deg, #f39c12 0%, #f1c40f 100%);
+}
+.card-header.bg-info {
+    background-image: linear-gradient(135deg, #17a2b8 0%, #3498db 100%);
+}
+.card-header.bg-secondary {
+    background-image: linear-gradient(135deg, #6c757d 0%, #7f8c8d 100%);
+}
+.card-header.bg-danger {
+    background-image: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
 }
 
 /* Objective cards */

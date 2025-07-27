@@ -511,7 +511,7 @@ def create_3d_scatter(results, selected_objectives):
             zaxis_title=f'{obj_names[2]} ({nutrition_ui.objective_units[obj_names[2]]})'
         ),
         template='plotly_white',
-        margin=dict(l=0, r=0, t=60, b=0)
+        margin=dict(l=40, r=40, t=60, b=40)
     )
     
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
