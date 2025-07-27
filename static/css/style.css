@@ -1,0 +1,132 @@
+/* Additional custom styles for Advanced Nutrition Optimizer */
+
+/* Loading animations */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.loading-pulse {
+    animation: pulse 2s infinite;
+}
+
+/* Interactive hover effects */
+.interactive-hover {
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.interactive-hover:hover {
+    transform: scale(1.02);
+}
+
+/* Gradient backgrounds */
+.gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.gradient-warning {
+    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+}
+
+/* Chart styling */
+.plotly-chart {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* Solution card enhancements */
+.solution-card {
+    border-left: 4px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.solution-card:hover {
+    border-left-color: var(--secondary-color);
+}
+
+/* Objective cards */
+.objective-card.selected {
+    animation: selectedPulse 0.5s ease-in-out;
+}
+
+@keyframes selectedPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Progress indicators */
+.progress-modern {
+    height: 8px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.progress-modern .progress-bar {
+    border-radius: 10px;
+    transition: width 0.8s ease-in-out;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .main-container {
+        margin: 1rem;
+        padding: 1rem;
+    }
+    
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    .objective-card {
+        margin-bottom: 1rem;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .main-container {
+        background: #2c3e50;
+        color: #ecf0f1;
+    }
+    
+    .card {
+        background: #34495e;
+        border-color: #5a6c7d;
+    }
+    
+    .card-header {
+        border-bottom-color: #5a6c7d;
+    }
+}
+
+/* Accessibility improvements */
+.focus-ring:focus {
+    outline: 2px solid var(--secondary-color);
+    outline-offset: 2px;
+}
+
+/* Animation classes */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-up {
+    animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
