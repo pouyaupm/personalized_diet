@@ -22,10 +22,11 @@ Objectives:
 3. Minimize sodium overage
 4. Minimize fiber shortfall
 5. Minimize carbon footprint (optional via footprint.csv)
+6. Minimize micronutrient deficiency across 15+ vitamins and minerals
 
 Quick Start:
 1) pip install pandas numpy matplotlib pymoo
-2) python meal_planning_nsga2.py
+2) python test.py
 """
 
 # 1. Setup and download
@@ -50,6 +51,34 @@ fat_col     = next((c for c in df.columns if 'lipid' in c.lower() or 'fat_total'
 fiber_col   = next((c for c in df.columns if 'fiber' in c.lower()), None)
 sodium_col  = next((c for c in df.columns if 'sodium' in c.lower()), None)
 
+# Detect micronutrient columns of interest
+micros = {
+    'calcium':  'data_major_minerals_calcium',
+    'iron':     'data_major_minerals_iron',
+    'magnesium':'data_major_minerals_magnesium',
+    'phosphorus':'data_major_minerals_phosphorus',
+    'potassium':'data_major_minerals_potassium',
+    'zinc':     'data_major_minerals_zinc',
+    'selenium': 'data_selenium',
+    'choline':  'data_choline',
+    'vitamin_a':'data_vitamins_vitamin_a_-_rae',
+    'vitamin_b6':'data_vitamins_vitamin_b6',
+    'vitamin_b12':'data_vitamins_vitamin_b12',
+    'vitamin_c':'data_vitamins_vitamin_c',
+    'vitamin_e':'data_vitamins_vitamin_e',
+    'vitamin_k':'data_vitamins_vitamin_k',
+    'riboflavin':'data_riboflavin',
+    'thiamin':  'data_thiamin',
+    'niacin':   'data_niacin'
+}
+for k, col in list(micros.items()):
+    found = next((c for c in df.columns if c.lower() == col), None)
+    if found:
+        micros[k] = found
+    else:
+        print(f"Warning: {k} column not found; using zeros for {k}.")
+        micros[k] = None
+
 # Ensure required macros are present
 for col in [protein_col, carb_col, fat_col]:
     if col is None:
@@ -64,6 +93,7 @@ if sodium_col is None:
 # Drop rows missing required values or optional if detected
 required_cols = [protein_col, carb_col, fat_col]
 optional_cols = [c for c in [fiber_col, sodium_col] if c]
+optional_cols += [c for c in micros.values() if c]
 df_clean = df.dropna(subset=required_cols + optional_cols)
 
 # Compute calories if not present
@@ -87,6 +117,12 @@ FIBER  = df_samp[fiber_col].to_numpy() if fiber_col else np.zeros(N)
 SODIUM = df_samp[sodium_col].to_numpy() if sodium_col else np.zeros(N)
 DESC   = df_samp['Description'].to_list()
 
+# Micronutrient arrays
+MICRO_ARRS = {}
+for k, col in micros.items():
+    # store per-food amounts for each micronutrient (0 if column missing)
+    MICRO_ARRS[k] = df_samp[col].to_numpy() if col else np.zeros(N)
+
 # 5. Load sustainability data if available
 if os.path.exists(FP_CSV):
     fp_df = pd.read_csv(FP_CSV)
@@ -100,10 +136,32 @@ targets_macro = np.array([2000, 50, 70, 310])  # cal, protein, fat, carbs
 target_fiber  = 25    # g/day minimum
 target_sodium = 2300  # mg/day maximum
 
+# Recommended Dietary Allowances for select micronutrients
+# Units are mg unless noted otherwise (vitamin_a, vitamin_b12, selenium in mcg)
+RDA = {
+    'calcium': 1000,
+    'iron': 18,
+    'magnesium': 400,
+    'phosphorus': 700,
+    'potassium': 4700,
+    'zinc': 11,
+    'selenium': 55,
+    'choline': 550,
+    'vitamin_a': 900,
+    'vitamin_b6': 1.3,
+    'vitamin_b12': 2.4,
+    'vitamin_c': 90,
+    'vitamin_e': 15,
+    'vitamin_k': 120,
+    'riboflavin': 1.3,
+    'thiamin': 1.2,
+    'niacin': 16,
+}
+
 # 7. Define the Problem
 class ExtendedMealPlan(Problem):
     def __init__(self):
-        super().__init__(n_var=N, n_obj=5, n_constr=0,
+        super().__init__(n_var=N, n_obj=6, n_constr=0,
                          xl=np.zeros(N), xu=np.full(N, 500))
 
     def _evaluate(self, X, out, *args, **kwargs):
@@ -126,7 +184,15 @@ class ExtendedMealPlan(Problem):
         f4 = np.maximum(target_fiber - (q @ FIBER), 0) / target_fiber
         # Objective 5: Carbon footprint
         f5 = (X / 1000) @ fp_arr
-        out['F'] = np.column_stack([f1, f2, f3, f4, f5])
+
+        # Objective 6: Micronutrient deficiency
+        micro_totals = np.column_stack([q @ MICRO_ARRS[k] for k in RDA.keys()])
+        rdas = np.array(list(RDA.values()))
+        completeness = micro_totals / rdas
+        deficiency = np.maximum(1 - completeness, 0)
+        f6 = deficiency.mean(axis=1)
+
+        out['F'] = np.column_stack([f1, f2, f3, f4, f5, f6])
 
 # 8. Run NSGA-II
 if __name__ == '__main__':
@@ -143,6 +209,7 @@ if __name__ == '__main__':
         print(f"  Sodium   : {result.F[i,2]:.3f}")
         print(f"  Fiber    : {result.F[i,3]:.3f}")
         print(f"  Footprint: {result.F[i,4]:.3f} kgCO2e")
+        print(f"  Micro def: {result.F[i,5]:.3f}")
         for idx, g in enumerate(result.X[i]):
             if g >= 10:
                 print(f"   {DESC[idx][:30]:30s} » {int(g)}g")
@@ -154,4 +221,30 @@ if __name__ == '__main__':
     plt.title('Pareto Front: Nutrition vs Footprint')
     plt.grid(True)
     plt.tight_layout()
+
+    # Micro deficiency vs Macro deviation
+    plt.figure()
+    plt.scatter(result.F[:,0], result.F[:,5], c='orange')
+    plt.xlabel('Macro Deviation')
+    plt.ylabel('Micronutrient Deficiency')
+    plt.title('Macro vs Micro Balance')
+    plt.grid(True)
+
+    # Radar plot of micronutrient completeness for best solution
+    best = result.X[0]
+    q = best / 100.0
+    micro_totals = [q @ MICRO_ARRS[k] for k in RDA.keys()]
+    completeness = np.minimum(np.array(micro_totals) / np.array(list(RDA.values())), 1)
+    labels = list(RDA.keys())
+    angles = np.linspace(0, 2*np.pi, len(labels), endpoint=False).tolist()
+    completeness = np.concatenate((completeness, [completeness[0]]))
+    angles += angles[:1]
+    fig = plt.figure(figsize=(6,6))
+    ax = fig.add_subplot(111, polar=True)
+    ax.plot(angles, completeness, 'o-', linewidth=2)
+    ax.fill(angles, completeness, alpha=0.25)
+    ax.set_thetagrids(np.degrees(angles[:-1]), labels)
+    ax.set_title('Micronutrient Completeness')
+    ax.set_ylim(0,1)
+
     plt.show()
