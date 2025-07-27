@@ -24,9 +24,7 @@ try:
 except ImportError as e:
     print(f"Warning: Could not import advanced_nutrition_optimizer: {e}")
     print("Creating fallback data structures...")
-    
-    # Create fallback data structures for demo purposes
-    import numpy as np
+
     
     class AdvancedNutritionProblem:
         def __init__(self):
@@ -165,7 +163,7 @@ def optimize():
         except Exception as e:
             print(f"Optimization failed, creating dummy results: {e}")
             # Create dummy results for demo purposes
-            import numpy as np
+            
             
             class DummyResult:
                 def __init__(self, n_solutions=50):
