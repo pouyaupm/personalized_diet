@@ -95,14 +95,20 @@
         background: #2c3e50;
         color: #ecf0f1;
     }
-    
+
     .card {
         background: #34495e;
         border-color: #5a6c7d;
+        color: #ecf0f1;
     }
-    
+
     .card-header {
         border-bottom-color: #5a6c7d;
+        color: #ecf0f1;
+    }
+
+    .navbar {
+        background: #1b2838 !important;
     }
 }
 

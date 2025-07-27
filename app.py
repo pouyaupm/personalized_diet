@@ -456,7 +456,8 @@ def create_2d_scatter(results, selected_objectives):
         xaxis_title=f'{obj_names[0]} ({nutrition_ui.objective_units[obj_names[0]]})',
         yaxis_title=f'{obj_names[1]} ({nutrition_ui.objective_units[obj_names[1]]})',
         hovermode='closest',
-        template='plotly_white'
+        template='plotly_white',
+        margin=dict(l=40, r=40, t=60, b=40)
     )
     
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
@@ -509,7 +510,8 @@ def create_3d_scatter(results, selected_objectives):
             yaxis_title=f'{obj_names[1]} ({nutrition_ui.objective_units[obj_names[1]]})',
             zaxis_title=f'{obj_names[2]} ({nutrition_ui.objective_units[obj_names[2]]})'
         ),
-        template='plotly_white'
+        template='plotly_white',
+        margin=dict(l=0, r=0, t=60, b=0)
     )
     
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
