@@ -156,7 +156,8 @@
                         </div>
                         <div class="card-body">
                             <div class="row" id="objectivesContainer">
-                                {% for i, (name, description) in enumerate(objective_descriptions.items()) %}
+                                {% for name in objective_names %}
+                                {% set i = loop.index0 %}
                                 <div class="col-lg-6 col-xl-4 mb-3">
                                     <div class="objective-card card h-100 {% if i < 4 %}selected{% endif %}" data-objective="{{ i }}">
                                         <div class="card-body">
@@ -166,7 +167,7 @@
                                                 <label class="form-check-label w-100" for="obj{{ i }}">
                                                     <strong>{{ name }}</strong>
                                                     <br>
-                                                    <small class="text-muted">{{ description }}</small>
+                                                    <small class="text-muted">{{ objective_descriptions[name] }}</small>
                                                 </label>
                                             </div>
                                         </div>

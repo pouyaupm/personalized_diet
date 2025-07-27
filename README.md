@@ -107,16 +107,63 @@ The system simultaneously optimizes **8 objectives**:
 
 ## 🔧 Usage
 
+### Web UI Application (Recommended)
+```bash
+# Install required dependencies
+pip install flask plotly pandas numpy
+
+# Optional: Install optimization engine (for full functionality)
+pip install pymoo matplotlib seaborn
+
+# Run the web application
+python app.py
+
+# Open your browser to:
+http://localhost:5000
+```
+
+### HOW TO RUN
+
+#### **🚀 EASIEST WAY (Recommended)**
+```bash
+# One command to handle everything:
+python run_app.py
+```
+This script will:
+- Check your Python version
+- Install missing dependencies automatically
+- Start the web application
+- Open at: http://localhost:5000
+
+#### **📋 Manual Method**
+1. **Install Python** (3.7 or higher)
+2. **Install dependencies**:
+   ```bash
+   pip install flask plotly pandas numpy
+   # Optional for full optimization:
+   pip install pymoo matplotlib seaborn
+   ```
+3. **Run the application**:
+   ```bash
+   python app.py
+   ```
+4. **Open your browser** and go to: `http://localhost:5000`
+
 ### Quick Demo (Analysis Only)
 ```bash
 python3 quick_demo.py
 ```
 
-### Full Optimization (Requires pymoo)
+### Full Optimization (Command Line)
 ```bash
 pip install -r requirements.txt
 python3 advanced_nutrition_optimizer.py
 ```
+
+### Troubleshooting
+- If you get import errors, the app will run with demo data
+- Make sure you have Python 3.8+ installed
+- On Windows, use `python` instead of `python3`
 
 ## 📋 Sample Output Analysis
 
