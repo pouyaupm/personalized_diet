@@ -168,7 +168,7 @@ def optimize():
             class DummyResult:
                 def __init__(self, n_solutions=50):
                     self.X = np.random.uniform(0, 500, (n_solutions, len(nutrient_arrays)))
-                    self.F = np.random.uniform(-1, 1, (n_solutions, len(selected_objectives)))
+                    self.F = np.random.uniform(-1, 1, (n_solutions, 8))
             
             result = DummyResult()
         
@@ -418,11 +418,19 @@ def analyze_solution_detailed(quantities, q):
 def create_2d_scatter(results, selected_objectives):
     """Create 2D scatter plot for 2 objectives"""
     X, F = results['X'], results['F']
+    stored_objectives = results.get('selected_objectives', list(range(F.shape[1])))
     obj_names = [nutrition_ui.objective_names[i] for i in selected_objectives]
-    
+
+    def col_values(obj_idx):
+        if F.shape[1] == len(stored_objectives):
+            col = stored_objectives.index(obj_idx)
+        else:
+            col = obj_idx
+        return F[:, col]
+
     # Extract objective values
-    x_vals = F[:, selected_objectives[0]]
-    y_vals = F[:, selected_objectives[1]]
+    x_vals = col_values(selected_objectives[0])
+    y_vals = col_values(selected_objectives[1])
     
     # Convert maximization objectives for display
     if selected_objectives[0] in [1, 2, 4, 6]:
@@ -457,7 +465,10 @@ def create_2d_scatter(results, selected_objectives):
         yaxis_title=f'{obj_names[1]} ({nutrition_ui.objective_units[obj_names[1]]})',
         hovermode='closest',
         template='plotly_white',
-        margin=dict(l=40, r=40, t=60, b=40)
+        margin=dict(l=40, r=40, t=60, b=40),
+        font=dict(color='#333'),
+        paper_bgcolor='white',
+        plot_bgcolor='white'
     )
     
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
@@ -465,12 +476,20 @@ def create_2d_scatter(results, selected_objectives):
 def create_3d_scatter(results, selected_objectives):
     """Create 3D scatter plot for 3 objectives"""
     X, F = results['X'], results['F']
+    stored_objectives = results.get('selected_objectives', list(range(F.shape[1])))
     obj_names = [nutrition_ui.objective_names[i] for i in selected_objectives]
-    
+
+    def col_values(obj_idx):
+        if F.shape[1] == len(stored_objectives):
+            col = stored_objectives.index(obj_idx)
+        else:
+            col = obj_idx
+        return F[:, col]
+
     # Extract objective values
-    x_vals = F[:, selected_objectives[0]]
-    y_vals = F[:, selected_objectives[1]]
-    z_vals = F[:, selected_objectives[2]]
+    x_vals = col_values(selected_objectives[0])
+    y_vals = col_values(selected_objectives[1])
+    z_vals = col_values(selected_objectives[2])
     
     # Convert maximization objectives for display
     if selected_objectives[0] in [1, 2, 4, 6]:
@@ -508,10 +527,14 @@ def create_3d_scatter(results, selected_objectives):
         scene=dict(
             xaxis_title=f'{obj_names[0]} ({nutrition_ui.objective_units[obj_names[0]]})',
             yaxis_title=f'{obj_names[1]} ({nutrition_ui.objective_units[obj_names[1]]})',
-            zaxis_title=f'{obj_names[2]} ({nutrition_ui.objective_units[obj_names[2]]})'
+            zaxis_title=f'{obj_names[2]} ({nutrition_ui.objective_units[obj_names[2]]})',
+            backgroundcolor='white'
         ),
         template='plotly_white',
-        margin=dict(l=40, r=40, t=60, b=40)
+        margin=dict(l=40, r=40, t=60, b=40),
+        font=dict(color='#333'),
+        paper_bgcolor='white',
+        plot_bgcolor='white'
     )
     
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
@@ -519,12 +542,20 @@ def create_3d_scatter(results, selected_objectives):
 def create_parallel_coordinates(results, selected_objectives):
     """Create parallel coordinates plot for multiple objectives"""
     X, F = results['X'], results['F']
+    stored_objectives = results.get('selected_objectives', list(range(F.shape[1])))
     obj_names = [nutrition_ui.objective_names[i] for i in selected_objectives]
+
+    def col_values(obj_idx):
+        if F.shape[1] == len(stored_objectives):
+            col = stored_objectives.index(obj_idx)
+        else:
+            col = obj_idx
+        return F[:, col]
     
     # Prepare data
     dimensions = []
     for i, obj_idx in enumerate(selected_objectives):
-        values = F[:, obj_idx]
+        values = col_values(obj_idx)
         # Convert maximization objectives for display
         if obj_idx in [1, 2, 4, 6]:
             values = -values
@@ -547,7 +578,10 @@ def create_parallel_coordinates(results, selected_objectives):
     
     fig.update_layout(
         title='Parallel Coordinates Plot of Pareto Solutions',
-        template='plotly_white'
+        template='plotly_white',
+        font=dict(color='#333'),
+        paper_bgcolor='white',
+        plot_bgcolor='white'
     )
     
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
@@ -555,12 +589,20 @@ def create_parallel_coordinates(results, selected_objectives):
 def create_radar_chart(results, selected_objectives):
     """Create radar chart showing top solutions"""
     X, F = results['X'], results['F']
+    stored_objectives = results.get('selected_objectives', list(range(F.shape[1])))
     obj_names = [nutrition_ui.objective_names[i] for i in selected_objectives]
+
+    def col_values(obj_idx):
+        if F.shape[1] == len(stored_objectives):
+            col = stored_objectives.index(obj_idx)
+        else:
+            col = obj_idx
+        return F[:, col]
     
     # Normalize objectives to 0-1 scale for radar chart
     normalized_data = []
     for obj_idx in selected_objectives:
-        values = F[:, obj_idx]
+        values = col_values(obj_idx)
         # Convert maximization objectives for display
         if obj_idx in [1, 2, 4, 6]:
             values = -values
@@ -608,7 +650,10 @@ def create_radar_chart(results, selected_objectives):
         ),
         showlegend=True,
         title="Top 5 Solutions - Radar Chart",
-        template='plotly_white'
+        template='plotly_white',
+        font=dict(color='#333'),
+        paper_bgcolor='white',
+        plot_bgcolor='white'
     )
     
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
