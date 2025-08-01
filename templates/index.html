@@ -262,7 +262,7 @@
 
         <!-- Chart Container -->
         <div class="chart-container" id="chartContainer" style="display: none;">
-            <div id="plotlyChart"></div>
+            <div id="plotlyChart" style="width: 100%; height: 500px;"></div>
         </div>
     </div>
 </div>
@@ -321,7 +321,17 @@ $(document).ready(function() {
         generateVisualization();
     });
 
+    // Handle tab switching to check for optimization results
+    $('#visualize-tab').on('shown.bs.tab', function() {
+        checkVisualizationAvailability();
+    });
+
     updateObjectiveSelection();
+    
+    // Initialize visualization tab state
+    if ($('#visualize-tab').hasClass('active')) {
+        checkVisualizationAvailability();
+    }
 });
 
 function showAlert(message, type = 'info') {
@@ -411,8 +421,61 @@ function displayResults(results) {
     $('#resultsContainer').show();
 }
 
+function checkVisualizationAvailability() {
+    // First check local state
+    if (!optimizationResults) {
+        // Also verify with server
+        $.ajax({
+            url: '/check_results',
+            type: 'GET',
+            success: function(response) {
+                if (response.success && response.has_results) {
+                    // Results exist on server but not locally - refresh page or redirect
+                    showAlert('Optimization results found. Please refresh the page or run optimization again.', 'info');
+                } else {
+                    // No optimization results available
+                    $('#vizObjectivesContainer').html(`
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>No optimization results found.</strong><br>
+                            Please run an optimization first to generate visualization data.
+                            <br><br>
+                            <button class="btn btn-primary btn-sm" onclick="$('#setup-tab').tab('show')">
+                                <i class="fas fa-cog me-2"></i>Go to Setup & Objectives
+                            </button>
+                        </div>
+                    `);
+                    $('#generateVizBtn').prop('disabled', true);
+                    $('#chartContainer').hide();
+                }
+            },
+            error: function() {
+                // Fallback to local check
+                $('#vizObjectivesContainer').html(`
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>No optimization results found.</strong><br>
+                        Please run an optimization first to generate visualization data.
+                        <br><br>
+                        <button class="btn btn-primary btn-sm" onclick="$('#setup-tab').tab('show')">
+                            <i class="fas fa-cog me-2"></i>Go to Setup & Objectives
+                        </button>
+                    </div>
+                `);
+                $('#generateVizBtn').prop('disabled', true);
+                $('#chartContainer').hide();
+            }
+        });
+        return false;
+    }
+    return true;
+}
+
 function setupVisualizationControls() {
-    if (!optimizationResults) return;
+    if (!optimizationResults) {
+        checkVisualizationAvailability();
+        return;
+    }
 
     let objectiveNames = [
         "Macro Deviation", "Micronutrient Completeness", "Antioxidant Diversity",
@@ -437,6 +500,11 @@ function setupVisualizationControls() {
 }
 
 function generateVisualization() {
+    // Check if optimization results are available
+    if (!checkVisualizationAvailability()) {
+        return;
+    }
+
     const selectedVizObjectives = [];
     $('.viz-objective:checked').each(function() {
         selectedVizObjectives.push(parseInt($(this).val()));
@@ -458,9 +526,28 @@ function generateVisualization() {
             chart_type: chartType
         }),
         success: function(response) {
+            console.log('Visualization response:', response);
             if (response.success) {
+                // The backend returns a JSON string, so we need to parse it
                 const plotData = JSON.parse(response.plot_json);
-                Plotly.newPlot('plotlyChart', plotData.data, plotData.layout, {responsive: true});
+                console.log('Plot data:', plotData);
+                console.log('Number of traces:', plotData.data.length);
+                if (plotData.data.length > 0) {
+                    console.log('First trace:', plotData.data[0]);
+                    console.log('First trace x length:', plotData.data[0].x ? plotData.data[0].x.length : 'N/A');
+                    console.log('First trace y length:', plotData.data[0].y ? plotData.data[0].y.length : 'N/A');
+                    console.log('First trace mode:', plotData.data[0].mode);
+                    console.log('First trace type:', plotData.data[0].type);
+                }
+                console.log('About to render plot with Plotly.newPlot');
+                console.log('Chart container element:', document.getElementById('plotlyChart'));
+                try {
+                    Plotly.newPlot('plotlyChart', plotData.data, plotData.layout, {responsive: true});
+                    console.log('Plotly.newPlot completed successfully');
+                } catch (error) {
+                    console.error('Plotly.newPlot error:', error);
+                    showAlert('Error rendering plot: ' + error.message, 'danger');
+                }
                 $('#chartContainer').show();
             } else {
                 showAlert('Visualization failed: ' + response.error, 'danger');

@@ -212,6 +212,15 @@ def optimize():
         print(f"Optimization error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/check_results')
+def check_results():
+    """Check if optimization results are available for the current session"""
+    session_id = session.get('session_id')
+    if session_id and session_id in optimization_results:
+        return jsonify({'success': True, 'has_results': True})
+    else:
+        return jsonify({'success': True, 'has_results': False})
+
 @app.route('/visualize', methods=['POST'])
 def visualize():
     try:
@@ -269,7 +278,7 @@ def solutions():
         
         for j, obj_idx in enumerate(selected_objectives):
             obj_name = nutrition_ui.objective_names[obj_idx]
-            value = F[i, obj_idx]
+            value = F[i, obj_idx]  # obj_idx is the correct column index since F has all 8 objectives
             
             # Convert maximization objectives for display
             if obj_idx in [1, 2, 4, 6]:
@@ -418,19 +427,18 @@ def analyze_solution_detailed(quantities, q):
 def create_2d_scatter(results, selected_objectives):
     """Create 2D scatter plot for 2 objectives"""
     X, F = results['X'], results['F']
-    stored_objectives = results.get('selected_objectives', list(range(F.shape[1])))
     obj_names = [nutrition_ui.objective_names[i] for i in selected_objectives]
 
-    def col_values(obj_idx):
-        if F.shape[1] == len(stored_objectives):
-            col = stored_objectives.index(obj_idx)
-        else:
-            col = obj_idx
-        return F[:, col]
-
-    # Extract objective values
-    x_vals = col_values(selected_objectives[0])
-    y_vals = col_values(selected_objectives[1])
+    # Extract objective values directly using objective indices as column indices
+    x_vals = F[:, selected_objectives[0]]
+    y_vals = F[:, selected_objectives[1]]
+    
+    # Debug: Print the raw values to see what we're working with
+    print(f"DEBUG: 2D scatter for objectives {selected_objectives}")
+    print(f"DEBUG: x_vals shape: {x_vals.shape}, range: [{np.min(x_vals):.3f}, {np.max(x_vals):.3f}]")
+    print(f"DEBUG: y_vals shape: {y_vals.shape}, range: [{np.min(y_vals):.3f}, {np.max(y_vals):.3f}]")
+    print(f"DEBUG: x_vals has NaN: {np.any(np.isnan(x_vals))}, y_vals has NaN: {np.any(np.isnan(y_vals))}")
+    print(f"DEBUG: x_vals has inf: {np.any(np.isinf(x_vals))}, y_vals has inf: {np.any(np.isinf(y_vals))}")
     
     # Convert maximization objectives for display
     if selected_objectives[0] in [1, 2, 4, 6]:
@@ -438,26 +446,53 @@ def create_2d_scatter(results, selected_objectives):
     if selected_objectives[1] in [1, 2, 4, 6]:
         y_vals = -y_vals
     
+    # Debug: Print the converted values
+    print(f"DEBUG: After conversion - x_vals range: [{np.min(x_vals):.3f}, {np.max(x_vals):.3f}]")
+    print(f"DEBUG: After conversion - y_vals range: [{np.min(y_vals):.3f}, {np.max(y_vals):.3f}]")
+    
+    # Clean the data - remove any NaN or infinite values
+    valid_mask = ~(np.isnan(x_vals) | np.isnan(y_vals) | np.isinf(x_vals) | np.isinf(y_vals))
+    x_vals_clean = x_vals[valid_mask]
+    y_vals_clean = y_vals[valid_mask]
+    
+    print(f"DEBUG: After cleaning - valid points: {np.sum(valid_mask)}/{len(x_vals)}")
+    if len(x_vals_clean) > 0:
+        print(f"DEBUG: Clean x_vals range: [{np.min(x_vals_clean):.3f}, {np.max(x_vals_clean):.3f}]")
+        print(f"DEBUG: Clean y_vals range: [{np.min(y_vals_clean):.3f}, {np.max(y_vals_clean):.3f}]")
+    else:
+        print("DEBUG: No valid data points after cleaning!")
+    
     fig = go.Figure()
     
-    fig.add_trace(go.Scatter(
-        x=x_vals,
-        y=y_vals,
-        mode='markers',
-        marker=dict(
-            size=8,
-            color=np.arange(len(x_vals)),
-            colorscale='viridis',
-            showscale=True,
-            colorbar=dict(title="Solution Index")
-        ),
-        text=[f"Solution {i}" for i in range(len(x_vals))],
-        hovertemplate=f'<b>%{{text}}</b><br>' +
-                     f'{obj_names[0]}: %{{x:.3f}}<br>' +
-                     f'{obj_names[1]}: %{{y:.3f}}<br>' +
-                     '<extra></extra>',
-        name='Pareto Solutions'
-    ))
+    # Only create the plot if we have valid data
+    if len(x_vals_clean) > 0:
+        fig.add_trace(go.Scatter(
+            x=x_vals_clean.tolist(),  # Convert numpy array to list
+            y=y_vals_clean.tolist(),  # Convert numpy array to list
+            mode='markers',
+            marker=dict(
+                size=8,
+                color=np.arange(len(x_vals_clean)).tolist(),  # Convert numpy array to list
+                colorscale='viridis',
+                showscale=True,
+                colorbar=dict(title="Solution Index")
+            ),
+            text=[f"Solution {i}" for i in range(len(x_vals_clean))],
+            hovertemplate=f'<b>%{{text}}</b><br>' +
+                         f'{obj_names[0]}: %{{x:.3f}}<br>' +
+                         f'{obj_names[1]}: %{{y:.3f}}<br>' +
+                         '<extra></extra>',
+            name='Pareto Solutions'
+        ))
+    else:
+        # Add a dummy trace to show the plot structure
+        fig.add_trace(go.Scatter(
+            x=[0], y=[0],
+            mode='markers',
+            marker=dict(size=0),
+            showlegend=False
+        ))
+        print("DEBUG: Added dummy trace because no valid data points")
     
     fig.update_layout(
         title=f'Pareto Front: {obj_names[0]} vs {obj_names[1]}',
@@ -471,25 +506,26 @@ def create_2d_scatter(results, selected_objectives):
         plot_bgcolor='white'
     )
     
+    # Debug: Check the figure data
+    print(f"DEBUG: Figure has {len(fig.data)} traces")
+    if len(fig.data) > 0:
+        trace = fig.data[0]
+        print(f"DEBUG: Trace type: {trace.type}")
+        print(f"DEBUG: Trace x length: {len(trace.x) if hasattr(trace, 'x') else 'N/A'}")
+        print(f"DEBUG: Trace y length: {len(trace.y) if hasattr(trace, 'y') else 'N/A'}")
+        print(f"DEBUG: Trace mode: {trace.mode}")
+    
     return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 def create_3d_scatter(results, selected_objectives):
     """Create 3D scatter plot for 3 objectives"""
     X, F = results['X'], results['F']
-    stored_objectives = results.get('selected_objectives', list(range(F.shape[1])))
     obj_names = [nutrition_ui.objective_names[i] for i in selected_objectives]
 
-    def col_values(obj_idx):
-        if F.shape[1] == len(stored_objectives):
-            col = stored_objectives.index(obj_idx)
-        else:
-            col = obj_idx
-        return F[:, col]
-
-    # Extract objective values
-    x_vals = col_values(selected_objectives[0])
-    y_vals = col_values(selected_objectives[1])
-    z_vals = col_values(selected_objectives[2])
+    # Extract objective values directly using objective indices as column indices
+    x_vals = F[:, selected_objectives[0]]
+    y_vals = F[:, selected_objectives[1]]
+    z_vals = F[:, selected_objectives[2]]
     
     # Convert maximization objectives for display
     if selected_objectives[0] in [1, 2, 4, 6]:
@@ -502,13 +538,13 @@ def create_3d_scatter(results, selected_objectives):
     fig = go.Figure()
     
     fig.add_trace(go.Scatter3d(
-        x=x_vals,
-        y=y_vals,
-        z=z_vals,
+        x=x_vals.tolist(),  # Convert numpy array to list
+        y=y_vals.tolist(),  # Convert numpy array to list
+        z=z_vals.tolist(),  # Convert numpy array to list
         mode='markers',
         marker=dict(
             size=6,
-            color=np.arange(len(x_vals)),
+            color=np.arange(len(x_vals)).tolist(),  # Convert numpy array to list
             colorscale='viridis',
             showscale=True,
             colorbar=dict(title="Solution Index")
@@ -528,7 +564,7 @@ def create_3d_scatter(results, selected_objectives):
             xaxis_title=f'{obj_names[0]} ({nutrition_ui.objective_units[obj_names[0]]})',
             yaxis_title=f'{obj_names[1]} ({nutrition_ui.objective_units[obj_names[1]]})',
             zaxis_title=f'{obj_names[2]} ({nutrition_ui.objective_units[obj_names[2]]})',
-            backgroundcolor='white'
+            bgcolor='white'
         ),
         template='plotly_white',
         margin=dict(l=40, r=40, t=60, b=40),
@@ -542,20 +578,18 @@ def create_3d_scatter(results, selected_objectives):
 def create_parallel_coordinates(results, selected_objectives):
     """Create parallel coordinates plot for multiple objectives"""
     X, F = results['X'], results['F']
-    stored_objectives = results.get('selected_objectives', list(range(F.shape[1])))
     obj_names = [nutrition_ui.objective_names[i] for i in selected_objectives]
-
-    def col_values(obj_idx):
-        if F.shape[1] == len(stored_objectives):
-            col = stored_objectives.index(obj_idx)
-        else:
-            col = obj_idx
-        return F[:, col]
+    
+    # Debug: Print the raw values to see what we're working with
+    print(f"DEBUG: Parallel coordinates for objectives {selected_objectives}")
+    for i, obj_idx in enumerate(selected_objectives):
+        values = F[:, obj_idx]
+        print(f"DEBUG: Objective {obj_idx} ({obj_names[i]}) - range: [{np.min(values):.3f}, {np.max(values):.3f}]")
     
     # Prepare data
     dimensions = []
     for i, obj_idx in enumerate(selected_objectives):
-        values = col_values(obj_idx)
+        values = F[:, obj_idx]
         # Convert maximization objectives for display
         if obj_idx in [1, 2, 4, 6]:
             values = -values
@@ -568,7 +602,7 @@ def create_parallel_coordinates(results, selected_objectives):
     
     fig = go.Figure(data=go.Parcoords(
         line=dict(
-            color=np.arange(len(F)),
+            color=np.arange(len(F)).tolist(),  # Convert numpy array to list
             colorscale='viridis',
             showscale=True,
             colorbar=dict(title="Solution Index")
@@ -589,20 +623,12 @@ def create_parallel_coordinates(results, selected_objectives):
 def create_radar_chart(results, selected_objectives):
     """Create radar chart showing top solutions"""
     X, F = results['X'], results['F']
-    stored_objectives = results.get('selected_objectives', list(range(F.shape[1])))
     obj_names = [nutrition_ui.objective_names[i] for i in selected_objectives]
-
-    def col_values(obj_idx):
-        if F.shape[1] == len(stored_objectives):
-            col = stored_objectives.index(obj_idx)
-        else:
-            col = obj_idx
-        return F[:, col]
     
     # Normalize objectives to 0-1 scale for radar chart
     normalized_data = []
     for obj_idx in selected_objectives:
-        values = col_values(obj_idx)
+        values = F[:, obj_idx]
         # Convert maximization objectives for display
         if obj_idx in [1, 2, 4, 6]:
             values = -values
