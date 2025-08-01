@@ -185,19 +185,19 @@ def optimize():
         n_solutions = len(result.X)
         objective_stats = []
         
-        for i, obj_name in enumerate(nutrition_ui.objective_names):
-            if i in selected_objectives:
-                values = result.F[:, i]
-                # Convert maximization objectives (negative values) to positive for display
-                if i in [1, 2, 4, 6]:  # Maximization objectives
-                    values = -values
-                
-                objective_stats.append({
-                    'name': obj_name,
-                    'min': float(np.min(values)),
-                    'max': float(np.max(values)),
-                    'mean': float(np.mean(values)),
-                    'unit': nutrition_ui.objective_units[obj_name]
+        for f_col_idx, obj_idx in enumerate(selected_objectives):
+            obj_name = nutrition_ui.objective_names[obj_idx]
+            values = result.F[:, f_col_idx]  # Use column index in F matrix, not original objective index
+            # Convert maximization objectives (negative values) to positive for display
+            if obj_idx in [1, 2, 4, 6]:  # Maximization objectives
+                values = -values
+            
+            objective_stats.append({
+                'name': obj_name,
+                'min': float(np.min(values)),
+                'max': float(np.max(values)),
+                'mean': float(np.mean(values)),
+                'unit': nutrition_ui.objective_units[obj_name]
                 })
         
         return jsonify({
@@ -269,7 +269,7 @@ def solutions():
         
         for j, obj_idx in enumerate(selected_objectives):
             obj_name = nutrition_ui.objective_names[obj_idx]
-            value = F[i, obj_idx]
+            value = F[i, j]  # Use j as the column index in F matrix
             
             # Convert maximization objectives for display
             if obj_idx in [1, 2, 4, 6]:
@@ -418,11 +418,24 @@ def analyze_solution_detailed(quantities, q):
 def create_2d_scatter(results, selected_objectives):
     """Create 2D scatter plot for 2 objectives"""
     X, F = results['X'], results['F']
+    optimization_objectives = results['selected_objectives']  # Original objectives from optimization
     obj_names = [nutrition_ui.objective_names[i] for i in selected_objectives]
     
-    # Extract objective values
-    x_vals = F[:, selected_objectives[0]]
-    y_vals = F[:, selected_objectives[1]]
+    # Map visualization objectives to F matrix columns
+    # Find the index in F matrix for each visualization objective
+    try:
+        x_idx = optimization_objectives.index(selected_objectives[0])
+        y_idx = optimization_objectives.index(selected_objectives[1])
+    except ValueError as e:
+        print(f"Error: Selected visualization objective not found in optimization results: {e}")
+        # Return an empty plot
+        fig = go.Figure()
+        fig.update_layout(title="Error: Selected objectives not available in optimization results")
+        return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    
+    # Extract objective values using correct indices
+    x_vals = F[:, x_idx]
+    y_vals = F[:, y_idx]
     
     # Convert maximization objectives for display
     if selected_objectives[0] in [1, 2, 4, 6]:
@@ -464,12 +477,25 @@ def create_2d_scatter(results, selected_objectives):
 def create_3d_scatter(results, selected_objectives):
     """Create 3D scatter plot for 3 objectives"""
     X, F = results['X'], results['F']
+    optimization_objectives = results['selected_objectives']  # Original objectives from optimization
     obj_names = [nutrition_ui.objective_names[i] for i in selected_objectives]
     
-    # Extract objective values
-    x_vals = F[:, selected_objectives[0]]
-    y_vals = F[:, selected_objectives[1]]
-    z_vals = F[:, selected_objectives[2]]
+    # Map visualization objectives to F matrix columns
+    try:
+        x_idx = optimization_objectives.index(selected_objectives[0])
+        y_idx = optimization_objectives.index(selected_objectives[1])
+        z_idx = optimization_objectives.index(selected_objectives[2])
+    except ValueError as e:
+        print(f"Error: Selected visualization objective not found in optimization results: {e}")
+        # Return an empty plot
+        fig = go.Figure()
+        fig.update_layout(title="Error: Selected objectives not available in optimization results")
+        return json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+    
+    # Extract objective values using correct indices
+    x_vals = F[:, x_idx]
+    y_vals = F[:, y_idx]
+    z_vals = F[:, z_idx]
     
     # Convert maximization objectives for display
     if selected_objectives[0] in [1, 2, 4, 6]:
@@ -517,12 +543,20 @@ def create_3d_scatter(results, selected_objectives):
 def create_parallel_coordinates(results, selected_objectives):
     """Create parallel coordinates plot for multiple objectives"""
     X, F = results['X'], results['F']
+    optimization_objectives = results['selected_objectives']  # Original objectives from optimization
     obj_names = [nutrition_ui.objective_names[i] for i in selected_objectives]
     
     # Prepare data
     dimensions = []
     for i, obj_idx in enumerate(selected_objectives):
-        values = F[:, obj_idx]
+        try:
+            # Find the correct column index in F matrix
+            f_idx = optimization_objectives.index(obj_idx)
+            values = F[:, f_idx]
+        except ValueError:
+            print(f"Warning: Objective {obj_idx} not found in optimization results, skipping")
+            continue
+            
         # Convert maximization objectives for display
         if obj_idx in [1, 2, 4, 6]:
             values = -values
@@ -553,12 +587,20 @@ def create_parallel_coordinates(results, selected_objectives):
 def create_radar_chart(results, selected_objectives):
     """Create radar chart showing top solutions"""
     X, F = results['X'], results['F']
+    optimization_objectives = results['selected_objectives']  # Original objectives from optimization
     obj_names = [nutrition_ui.objective_names[i] for i in selected_objectives]
     
     # Normalize objectives to 0-1 scale for radar chart
     normalized_data = []
     for obj_idx in selected_objectives:
-        values = F[:, obj_idx]
+        try:
+            # Find the correct column index in F matrix
+            f_idx = optimization_objectives.index(obj_idx)
+            values = F[:, f_idx]
+        except ValueError:
+            print(f"Warning: Objective {obj_idx} not found in optimization results, skipping")
+            continue
+            
         # Convert maximization objectives for display
         if obj_idx in [1, 2, 4, 6]:
             values = -values
