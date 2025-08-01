@@ -1,0 +1,39 @@
+[
+  {
+    "gene": "BCMO1",
+    "refs": ["rs12934922", "rs7501331"],
+    "any_of": {"rs12934922": ["T"], "rs7501331": ["T"]},
+    "effect": {
+      "vitamin_a_conversion_factor": 24
+    },
+    "note": "WT=12; carriers use higher factor (24–36) to convert beta-carotene to retinol equivalents."
+  },
+  {
+    "gene": "APOE",
+    "refs": ["rs429358", "rs7412"],
+    "any_of": {"rs429358": ["C"], "rs7412": ["C"]},
+    "effect": {
+      "sat_fat_penalty_multiplier": 1.3
+    },
+    "note": "ε4+ increases penalty on saturated fat."
+  },
+  {
+    "gene": "FADS1",
+    "refs": ["rs174546"],
+    "any_of": {"rs174546": ["T"]},
+    "effect": {
+      "epa_dha_min_mg": 300
+    },
+    "note": "Require some direct EPA/DHA for minor allele carriers."
+  },
+  {
+    "gene": "TCF7L2",
+    "refs": ["rs7903146"],
+    "any_of": {"rs7903146": ["T"]},
+    "effect": {
+      "fiber_target_bonus_g": 5,
+      "added_sugar_max_delta_g": -10
+    },
+    "note": "Higher fiber target and lower added-sugar cap."
+  }
+] 
