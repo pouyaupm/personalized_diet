@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from flask import Flask, render_template, request, jsonify, session
 from pymoo.core.problem import Problem
-from pymoo.algorithms.moo.nsga2 import NSGA2
+from pymoo.algorithms.moo.nsga3 import NSGA3
 from pymoo.termination import get_termination
 from pymoo.optimize import minimize
 import plotly.graph_objects as go
@@ -18,19 +18,71 @@ import uuid
 import sys
 sys.path.append('.')
 
-# Try to import the nutrition optimizer, create a fallback if not available
-try:
-    from advanced_nutrition_optimizer import AdvancedNutritionProblem, nutrient_arrays, categories, descriptions, RDA_VALUES
-except ImportError as e:
-    print(f"Warning: Could not import advanced_nutrition_optimizer: {e}")
-    print("Creating fallback data structures...")
+def load_real_food_data():
+    """Load real food data from CSV file"""
+    try:
+        # Load the CSV file
+        df = pd.read_csv('data/food.csv')
+        
+        # Map CSV columns to our nutrient arrays
+        column_mapping = {
+            'protein': 'Data.Protein',
+            'carbs': 'Data.Carbohydrate',
+            'fat': 'Data.Fat.Total Lipid',
+            'fiber': 'Data.Fiber',
+            'sugar': 'Data.Sugar Total',
+            'sodium': 'Data.Major Minerals.Sodium',
+            'potassium': 'Data.Major Minerals.Potassium',
+            'calcium': 'Data.Major Minerals.Calcium',
+            'iron': 'Data.Major Minerals.Iron',
+            'vitamin_c': 'Data.Vitamins.Vitamin C',
+            'alpha_carotene': 'Data.Alpha Carotene',
+            'beta_carotene': 'Data.Beta Carotene',
+            'vitamin_e': 'Data.Vitamins.Vitamin E',
+            'lycopene': 'Data.Lycopene',
+            'saturated_fat': 'Data.Fat.Saturated Fat',
+            'monounsaturated_fat': 'Data.Fat.Monosaturated Fat',
+            'polyunsaturated_fat': 'Data.Fat.Polysaturated Fat',
+            'magnesium': 'Data.Major Minerals.Magnesium',
+            'phosphorus': 'Data.Major Minerals.Phosphorus',
+            'zinc': 'Data.Major Minerals.Zinc',
+            'copper': 'Data.Major Minerals.Copper',
+            'selenium': 'Data.Selenium',
+            'vitamin_a': 'Data.Vitamins.Vitamin A - RAE',
+            'vitamin_b6': 'Data.Vitamins.Vitamin B6',
+            'vitamin_b12': 'Data.Vitamins.Vitamin B12',
+            'vitamin_k': 'Data.Vitamins.Vitamin K',
+            'thiamin': 'Data.Thiamin',
+            'riboflavin': 'Data.Riboflavin',
+            'niacin': 'Data.Niacin',
+            'choline': 'Data.Choline',
+            'water': 'Data.Water'
+        }
+        
+        # Create nutrient arrays
+        nutrient_arrays = {}
+        for nutrient, column in column_mapping.items():
+            if column in df.columns:
+                # Fill NaN values with 0 and convert to numpy array
+                nutrient_arrays[nutrient] = df[column].fillna(0).values
+            else:
+                print(f"Warning: Column {column} not found in CSV, using zeros for {nutrient}")
+                nutrient_arrays[nutrient] = np.zeros(len(df))
+        
+        # Get categories and descriptions
+        categories = df['Category'].fillna('Unknown').values
+        descriptions = df['Description'].fillna('Unknown Food').values
+        
+        print(f"Successfully loaded {len(df)} foods from CSV")
+        return nutrient_arrays, categories, descriptions
+        
+    except Exception as e:
+        print(f"Error loading food data: {e}")
+        print("Falling back to dummy data...")
+        return create_dummy_data()
 
-    
-    class AdvancedNutritionProblem:
-        def __init__(self):
-            pass
-    
-    # Create dummy data
+def create_dummy_data():
+    """Create dummy data as fallback"""
     N = 100  # Number of foods
     nutrient_arrays = {
         'protein': np.random.uniform(0, 30, N),
@@ -70,11 +122,29 @@ except ImportError as e:
     categories = [category_names[i%8] for i in range(N)]
     descriptions = [f"Sample {category_names[i%8]} Item {i+1}" for i in range(N)]
     
+    return nutrient_arrays, categories, descriptions
+
+# Try to import the nutrition optimizer, create a fallback if not available
+try:
+    from advanced_nutrition_optimizer import AdvancedNutritionProblem, RDA_VALUES
+    print("Using advanced nutrition optimizer...")
+except ImportError as e:
+    print(f"Warning: Could not import advanced_nutrition_optimizer: {e}")
+    print("Creating fallback data structures...")
+    
+    class AdvancedNutritionProblem:
+        def __init__(self):
+            pass
+    
     RDA_VALUES = {
         'protein': 50, 'fiber': 25, 'calcium': 1000, 'iron': 18, 'magnesium': 400,
         'potassium': 3500, 'zinc': 11, 'vitamin_a': 900, 'vitamin_c': 90,
         'vitamin_e': 15, 'choline': 550
     }
+
+# Load real food data
+print("Loading food data...")
+nutrient_arrays, categories, descriptions = load_real_food_data()
 
 app = Flask(__name__)
 app.secret_key = 'nutrition_optimizer_secret_key_2024'
@@ -156,7 +226,7 @@ def optimize():
         
         try:
             problem = AdvancedNutritionProblem()
-            algorithm = NSGA2(pop_size=population_size)
+            algorithm = NSGA3(pop_size=population_size)
             termination = get_termination('n_gen', generations)
             
             result = minimize(problem, algorithm, termination, seed=42, verbose=False)
