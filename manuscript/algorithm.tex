@@ -1,0 +1,158 @@
+% Algorithm description for NSGA-III nutrition optimization
+\section{NSGA-III Algorithm Details}
+
+\subsection{Pseudocode}
+
+\begin{algorithm}[H]
+\caption{NSGA-III for Nutrition Optimization}
+\begin{algorithmic}[1]
+\STATE Initialize population $P_0$ with $N$ random solutions
+\STATE Generate reference directions $\mathbf{R}$ using Das-Dennis method
+\FOR{$t = 1$ to $T$}
+    \STATE Create offspring population $Q_t$ using genetic operations
+    \STATE Combine parent and offspring: $R_t = P_t \cup Q_t$
+    \STATE Perform non-dominated sorting on $R_t$
+    \STATE Initialize next population: $P_{t+1} = \emptyset$
+    \STATE $i = 1$
+    \WHILE{$|P_{t+1}| + |F_i| \leq N$}
+        \STATE Add front $F_i$ to $P_{t+1}$
+        \STATE $i = i + 1$
+    \ENDWHILE
+    \IF{$|P_{t+1}| < N$}
+        \STATE Associate solutions in $F_i$ with reference directions
+        \STATE Select remaining solutions using niche preservation
+    \ENDIF
+\ENDFOR
+\RETURN Final population $P_T$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Reference Direction Generation}
+
+The Das-Dennis systematic approach generates reference directions as follows:
+
+\begin{algorithm}[H]
+\caption{Das-Dennis Reference Direction Generation}
+\begin{algorithmic}[1]
+\STATE Input: Number of objectives $M$, number of partitions $H$
+\STATE Initialize reference set $\mathbf{R} = \emptyset$
+\FOR{all combinations of $w_1, w_2, \ldots, w_M$}
+    \IF{$\sum_{i=1}^{M} w_i = 1$ and $w_i \in \{0, \frac{1}{H}, \frac{2}{H}, \ldots, 1\}$}
+        \STATE $\mathbf{r} = \frac{\mathbf{w}}{\|\mathbf{w}\|}$
+        \STATE Add $\mathbf{r}$ to $\mathbf{R}$
+    \ENDIF
+\ENDFOR
+\RETURN Reference directions $\mathbf{R}$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Solution Association}
+
+Each solution is associated with the nearest reference direction:
+
+\begin{equation}
+d(\mathbf{z}, \mathbf{r}) = \arccos\left(\frac{\mathbf{z}^T \mathbf{r}}{\|\mathbf{z}\| \|\mathbf{r}\|}\right)
+\end{equation}
+
+where $\mathbf{z}$ is the normalized objective vector and $\mathbf{r}$ is a reference direction.
+
+\subsection{Niche Preservation}
+
+When multiple solutions are associated with the same reference direction, niche preservation selects the solution with the smallest perpendicular distance:
+
+\begin{equation}
+d_p(\mathbf{z}, \mathbf{r}) = \|\mathbf{z} - \frac{\mathbf{z}^T \mathbf{r}}{\|\mathbf{r}\|^2} \mathbf{r}\|
+\end{equation}
+
+\subsection{Genetic Operations}
+
+\subsubsection{Crossover}
+
+We use simulated binary crossover (SBX) with distribution index $\eta_c = 20$:
+
+\begin{equation}
+\beta = \begin{cases}
+(2u)^{\frac{1}{\eta_c + 1}} & \text{if } u \leq 0.5 \\
+\left(\frac{1}{2(1-u)}\right)^{\frac{1}{\eta_c + 1}} & \text{otherwise}
+\end{cases}
+\end{equation}
+
+\subsubsection{Mutation}
+
+Polynomial mutation with distribution index $\eta_m = 20$:
+
+\begin{equation}
+\delta = \begin{cases}
+(2r)^{\frac{1}{\eta_m + 1}} - 1 & \text{if } r < 0.5 \\
+1 - (2(1-r))^{\frac{1}{\eta_m + 1}} & \text{otherwise}
+\end{cases}
+\end{equation}
+
+\subsection{Computational Complexity}
+
+The overall computational complexity of NSGA-III is:
+
+\begin{itemize}
+    \item \textbf{Non-dominated sorting}: $O(MN^2)$ per generation
+    \item \textbf{Reference direction association}: $O(MN|\mathbf{R}|)$ per generation
+    \item \textbf{Total complexity}: $O(T \cdot M \cdot N^2)$ for $T$ generations
+\end{itemize}
+
+where $M$ is the number of objectives, $N$ is the population size, and $|\mathbf{R}|$ is the number of reference directions.
+
+\subsection{Parameter Settings}
+
+\begin{table}[H]
+\centering
+\caption{NSGA-III Parameter Settings}
+\label{tab:nsga3_params}
+\begin{tabular}{lc}
+\toprule
+Parameter & Value \\
+\midrule
+Population size & 100 \\
+Number of generations & 200 \\
+Crossover probability & 0.9 \\
+Mutation probability & 0.1 \\
+Distribution index (crossover) & 20 \\
+Distribution index (mutation) & 20 \\
+Reference direction partitions & 12 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Convergence Analysis}
+
+The convergence behavior of NSGA-III can be analyzed through:
+
+\begin{enumerate}
+    \item \textbf{Hypervolume indicator}: Measures the volume of objective space dominated by the Pareto front
+    \item \textbf{Generational distance}: Average distance from solutions to the true Pareto front
+    \item \textbf{Spread indicator}: Measures the distribution of solutions along the Pareto front
+\end{enumerate}
+
+For our nutrition optimization problem, we observe:
+
+\begin{itemize}
+    \item Rapid convergence in early generations (1-50)
+    \item Steady improvement in middle generations (51-150)
+    \item Fine-tuning in later generations (151-200)
+\end{itemize}
+
+\subsection{Solution Diversity}
+
+NSGA-III maintains solution diversity through:
+
+\begin{enumerate}
+    \item \textbf{Reference point distribution}: Ensures coverage across the objective space
+    \item \textbf{Niche preservation}: Prevents clustering around popular reference directions
+    \item \textbf{Environmental selection}: Balances convergence and diversity
+\end{enumerate}
+
+The diversity metric is measured as:
+
+\begin{equation}
+Diversity = \frac{1}{N(N-1)} \sum_{i=1}^{N} \sum_{j=i+1}^{N} \|\mathbf{x}_i - \mathbf{x}_j\|
+\end{equation}
+
+where $\mathbf{x}_i$ and $\mathbf{x}_j$ are solution vectors in the decision space. 

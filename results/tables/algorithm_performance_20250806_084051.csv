@@ -1,0 +1,5 @@
+Experiment,Population_Size,Generations,Convergence_Time,Memory_Usage,Solutions_Found
+All Objectives,100,200,~30s,~500MB,97
+Core Nutrition,100,200,~30s,~500MB,101
+Health Focused,100,200,~30s,~500MB,34
+Practical,100,200,~30s,~500MB,60
