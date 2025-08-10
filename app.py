@@ -124,6 +124,159 @@ def create_dummy_data():
     
     return nutrient_arrays, categories, descriptions
 
+def calculate_personalized_rda_values(personalization_data):
+    """Calculate personalized RDA values based on individual characteristics"""
+    
+    # Base RDA values for adults (age 19-50)
+    base_rda = {
+        'protein': 50,        # g
+        'fiber': 25,          # g
+        'calcium': 1000,      # mg
+        'iron': 18,           # mg
+        'magnesium': 400,     # mg
+        'phosphorus': 700,    # mg
+        'potassium': 3500,    # mg
+        'zinc': 11,           # mg
+        'copper': 0.9,        # mg
+        'selenium': 55,       # μg
+        'vitamin_a': 900,     # μg RAE
+        'vitamin_b6': 1.3,    # mg
+        'vitamin_b12': 2.4,   # μg
+        'vitamin_c': 90,      # mg
+        'vitamin_e': 15,      # mg
+        'vitamin_k': 120,     # μg
+        'thiamin': 1.2,       # mg
+        'riboflavin': 1.3,    # mg
+        'niacin': 16,         # mg
+        'choline': 550,       # mg
+    }
+    
+    personalized_rda = base_rda.copy()
+    
+    if personalization_data:
+        age = personalization_data.get('age', 30)
+        gender = personalization_data.get('gender', 'male')
+        weight = personalization_data.get('weight', 70)
+        health_conditions = personalization_data.get('healthConditions', {})
+        genetic_factors = personalization_data.get('geneticFactors', {})
+        
+        # Age-based adjustments
+        if age >= 51:
+            # Older adults need more of certain nutrients
+            personalized_rda['vitamin_b6'] = 1.7
+            personalized_rda['vitamin_b12'] = 2.4  # Same but absorption decreases with age
+            personalized_rda['calcium'] = 1200
+            personalized_rda['vitamin_d'] = 20  # μg (800 IU)
+        
+        if age >= 71:
+            personalized_rda['vitamin_b6'] = 1.5
+            personalized_rda['calcium'] = 1200
+        
+        # Gender-based adjustments
+        if gender == 'female':
+            personalized_rda['iron'] = 18  # Higher for premenopausal women
+            personalized_rda['calcium'] = 1000
+            if age >= 51:
+                personalized_rda['iron'] = 8  # Lower after menopause
+        
+        # Weight-based protein adjustment
+        personalized_rda['protein'] = max(50, weight * 0.8)  # At least 0.8g per kg
+        
+        # Health condition adjustments
+        if health_conditions.get('diabetes'):
+            personalized_rda['fiber'] += 5  # Higher fiber for blood sugar control
+            personalized_rda['magnesium'] += 50  # Magnesium helps with insulin sensitivity
+        
+        if health_conditions.get('hypertension'):
+            personalized_rda['potassium'] += 500  # Higher potassium for blood pressure
+            personalized_rda['magnesium'] += 50
+        
+        if health_conditions.get('heartDisease'):
+            personalized_rda['vitamin_e'] += 5  # Antioxidant protection
+            personalized_rda['vitamin_c'] += 30
+        
+        # Genetic factor adjustments
+        if genetic_factors:
+            fiber_adjustment = genetic_factors.get('fiberTarget', 0)
+            personalized_rda['fiber'] += fiber_adjustment
+            
+            # Vitamin A conversion factor affects beta-carotene needs
+            conversion_factor = genetic_factors.get('vitaminAConversion', 12)
+            if conversion_factor > 12:
+                personalized_rda['vitamin_a'] += (conversion_factor - 12) * 10  # Increase RAE needs
+        
+        # Dietary preference adjustments
+        dietary_prefs = personalization_data.get('dietaryPreferences', {})
+        if dietary_prefs.get('vegan'):
+            personalized_rda['vitamin_b12'] += 2.4  # Supplementation needed
+            personalized_rda['iron'] += 8  # Plant iron is less bioavailable
+            personalized_rda['zinc'] += 4  # Plant zinc is less bioavailable
+            personalized_rda['calcium'] += 200  # May need more due to oxalates in plants
+        
+        if dietary_prefs.get('vegetarian'):
+            personalized_rda['iron'] += 4  # Plant iron is less bioavailable
+            personalized_rda['zinc'] += 2
+    
+    return personalized_rda
+
+def apply_dietary_restrictions(nutrient_arrays, categories, descriptions, personalization_data):
+    """Apply dietary restrictions by filtering out restricted foods"""
+    if not personalization_data:
+        return nutrient_arrays, categories, descriptions
+    
+    dietary_prefs = personalization_data.get('dietaryPreferences', {})
+    allergies = personalization_data.get('allergies', {})
+    
+    # Create mask for allowed foods
+    allowed_mask = np.ones(len(categories), dtype=bool)
+    
+    # Apply dietary preferences
+    if dietary_prefs.get('vegetarian') or dietary_prefs.get('vegan'):
+        # Filter out meat and fish categories
+        meat_categories = ['Beef Products', 'Pork Products', 'Lamb, Veal, and Game Products', 
+                          'Sausages and Luncheon Meats', 'Finfish and Shellfish Products']
+        for i, category in enumerate(categories):
+            if any(meat in category for meat in meat_categories):
+                allowed_mask[i] = False
+    
+    if dietary_prefs.get('vegan'):
+        # Also filter out dairy and eggs
+        dairy_categories = ['Dairy and Egg Products']
+        for i, category in enumerate(categories):
+            if any(dairy in category for dairy in dairy_categories):
+                allowed_mask[i] = False
+    
+    # Apply allergies (simplified - would need more detailed food allergen data)
+    if allergies.get('nuts') or allergies.get('peanuts'):
+        nut_keywords = ['nut', 'almond', 'walnut', 'pecan', 'cashew', 'pistachio', 'peanut']
+        for i, desc in enumerate(descriptions):
+            if any(keyword in desc.lower() for keyword in nut_keywords):
+                allowed_mask[i] = False
+    
+    if allergies.get('shellfish'):
+        shellfish_keywords = ['shrimp', 'crab', 'lobster', 'oyster', 'clam', 'mussel']
+        for i, desc in enumerate(descriptions):
+            if any(keyword in desc.lower() for keyword in shellfish_keywords):
+                allowed_mask[i] = False
+    
+    if allergies.get('wheat'):
+        wheat_keywords = ['wheat', 'bread', 'pasta', 'cereal']
+        for i, desc in enumerate(descriptions):
+            if any(keyword in desc.lower() for keyword in wheat_keywords):
+                allowed_mask[i] = False
+    
+    # Apply the mask
+    filtered_arrays = {}
+    for nutrient, array in nutrient_arrays.items():
+        filtered_arrays[nutrient] = array[allowed_mask]
+    
+    filtered_categories = [cat for i, cat in enumerate(categories) if allowed_mask[i]]
+    filtered_descriptions = [desc for i, desc in enumerate(descriptions) if allowed_mask[i]]
+    
+    print(f"Applied dietary restrictions: {len(categories)} -> {len(filtered_categories)} foods")
+    
+    return filtered_arrays, filtered_categories, filtered_descriptions
+
 # Try to import the nutrition optimizer, create a fallback if not available
 try:
     from advanced_nutrition_optimizer import AdvancedNutritionProblem, RDA_VALUES
@@ -214,18 +367,36 @@ def optimize():
         selected_objectives = data.get('objectives', list(range(8)))
         population_size = data.get('population_size', 100)
         generations = data.get('generations', 200)
+        personalization_data = data.get('personalization', None)
+        
+        # Calculate personalized RDA values
+        personalized_rda = calculate_personalized_rda_values(personalization_data)
+        
+        # Apply dietary restrictions
+        filtered_arrays, filtered_categories, filtered_descriptions = apply_dietary_restrictions(
+            nutrient_arrays, categories, descriptions, personalization_data
+        )
         
         # Store session data
         session_id = str(uuid.uuid4())
         session['session_id'] = session_id
         session['macro_targets'] = macro_targets
         session['selected_objectives'] = selected_objectives
+        session['personalization_data'] = personalization_data
+        session['personalized_rda'] = personalized_rda
         
         # Run optimization
         print(f"Starting optimization with {len(selected_objectives)} objectives...")
+        print(f"Personalized RDA values: {personalized_rda}")
         
         try:
+            # Create a personalized problem instance
             problem = AdvancedNutritionProblem()
+            
+            # Update the problem with personalized data
+            if hasattr(problem, 'RDA_VALUES'):
+                problem.RDA_VALUES = personalized_rda
+            
             algorithm = NSGA3(pop_size=population_size)
             termination = get_termination('n_gen', generations)
             
@@ -234,10 +405,9 @@ def optimize():
             print(f"Optimization failed, creating dummy results: {e}")
             # Create dummy results for demo purposes
             
-            
             class DummyResult:
                 def __init__(self, n_solutions=50):
-                    self.X = np.random.uniform(0, 500, (n_solutions, len(nutrient_arrays)))
+                    self.X = np.random.uniform(0, 500, (n_solutions, len(filtered_arrays['protein'])))
                     self.F = np.random.uniform(-1, 1, (n_solutions, len(selected_objectives)))
             
             result = DummyResult()
@@ -248,6 +418,11 @@ def optimize():
             'F': result.F,
             'macro_targets': macro_targets,
             'selected_objectives': selected_objectives,
+            'personalization_data': personalization_data,
+            'personalized_rda': personalized_rda,
+            'filtered_arrays': filtered_arrays,
+            'filtered_categories': filtered_categories,
+            'filtered_descriptions': filtered_descriptions,
             'timestamp': datetime.now().isoformat()
         }
         
@@ -275,7 +450,8 @@ def optimize():
             'session_id': session_id,
             'n_solutions': n_solutions,
             'objective_stats': objective_stats,
-            'message': f'Optimization completed! Found {n_solutions} Pareto-optimal solutions.'
+            'personalized_rda': personalized_rda,
+            'message': f'Optimization completed! Found {n_solutions} Pareto-optimal solutions using personalized targets.'
         })
         
     except Exception as e:
@@ -372,23 +548,49 @@ def solution_detail(solution_id):
     quantities = X[solution_id]
     q = quantities / 100.0
     
-    # Calculate detailed analysis
-    analysis = analyze_solution_detailed(quantities, q)
+    # Get personalized data from results
+    personalized_rda = results.get('personalized_rda')
+    filtered_arrays = results.get('filtered_arrays')
+    filtered_descriptions = results.get('filtered_descriptions')
+    filtered_categories = results.get('filtered_categories')
+    
+    # Calculate detailed analysis with personalized data
+    analysis = analyze_solution_detailed(
+        quantities, q, 
+        personalized_rda=personalized_rda,
+        filtered_arrays=filtered_arrays,
+        filtered_descriptions=filtered_descriptions,
+        filtered_categories=filtered_categories
+    )
     
     return jsonify({
         'success': True,
         'analysis': analysis,
-        'solution_id': solution_id
+        'solution_id': solution_id,
+        'personalized_rda': personalized_rda
     })
 
-def analyze_solution_detailed(quantities, q):
+def analyze_solution_detailed(quantities, q, personalized_rda=None, filtered_arrays=None, filtered_descriptions=None, filtered_categories=None):
     """Detailed analysis of a specific solution"""
     
+    # Use filtered data if available, otherwise fall back to original data
+    if filtered_arrays is not None:
+        nutrient_arrays_to_use = filtered_arrays
+        descriptions_to_use = filtered_descriptions
+        categories_to_use = filtered_categories
+    else:
+        nutrient_arrays_to_use = nutrient_arrays
+        descriptions_to_use = descriptions
+        categories_to_use = categories
+    
+    # Use personalized RDA if available, otherwise fall back to default
+    rda_to_use = personalized_rda if personalized_rda is not None else RDA_VALUES
+    
     # Macronutrients
-    calories = q @ nutrient_arrays['protein'] * 4 + q @ nutrient_arrays['carbs'] * 4 + q @ nutrient_arrays['fat'] * 9
-    protein = q @ nutrient_arrays['protein']
-    fat = q @ nutrient_arrays['fat']
-    carbs = q @ nutrient_arrays['carbs']
+    calories = q @ nutrient_arrays_to_use['protein'] * 4 + q @ nutrient_arrays_to_use['carbs'] * 4 + q @ nutrient_arrays_to_use['fat'] * 9
+    protein = q @ nutrient_arrays_to_use['protein']
+    fat = q @ nutrient_arrays_to_use['fat']
+    carbs = q @ nutrient_arrays_to_use['carbs']
     
     macros = {
         'calories': float(calories),
@@ -399,10 +601,10 @@ def analyze_solution_detailed(quantities, q):
     
     # Micronutrients
     micronutrients = {}
-    for nutrient in RDA_VALUES:
-        if nutrient in nutrient_arrays:
-            intake = q @ nutrient_arrays[nutrient]
-            rda = RDA_VALUES[nutrient]
+    for nutrient in rda_to_use:
+        if nutrient in nutrient_arrays_to_use:
+            intake = q @ nutrient_arrays_to_use[nutrient]
+            rda = rda_to_use[nutrient]
             percentage = (intake / rda) * 100 if rda > 0 else 0
             
             micronutrients[nutrient] = {
@@ -417,8 +619,8 @@ def analyze_solution_detailed(quantities, q):
     for i, amount in enumerate(quantities):
         if amount > 5:  # Only include significant amounts
             foods.append({
-                'name': descriptions[i],
-                'category': categories[i],
+                'name': descriptions_to_use[i],
+                'category': categories_to_use[i],
                 'amount': float(amount)
             })
     
@@ -428,13 +630,13 @@ def analyze_solution_detailed(quantities, q):
     antioxidants = {}
     antioxidant_nutrients = ['alpha_carotene', 'beta_carotene', 'vitamin_c', 'vitamin_e', 'lycopene']
     for antioxidant in antioxidant_nutrients:
-        if antioxidant in nutrient_arrays:
-            amount = q @ nutrient_arrays[antioxidant]
+        if antioxidant in nutrient_arrays_to_use:
+            amount = q @ nutrient_arrays_to_use[antioxidant]
             antioxidants[antioxidant] = float(amount)
     
     # Sugar-Fiber analysis
-    total_sugar = q @ nutrient_arrays['sugar']
-    total_fiber = q @ nutrient_arrays['fiber']
+    total_sugar = q @ nutrient_arrays_to_use['sugar']
+    total_fiber = q @ nutrient_arrays_to_use['fiber']
     sugar_fiber_ratio = total_sugar / total_fiber if total_fiber > 0 else float('inf')
     
     sugar_fiber = {
@@ -445,9 +647,9 @@ def analyze_solution_detailed(quantities, q):
     }
     
     # Fat quality
-    saturated = q @ nutrient_arrays['saturated_fat']
-    mono = q @ nutrient_arrays['monounsaturated_fat']
-    poly = q @ nutrient_arrays['polyunsaturated_fat']
+    saturated = q @ nutrient_arrays_to_use['saturated_fat']
+    mono = q @ nutrient_arrays_to_use['monounsaturated_fat']
+    poly = q @ nutrient_arrays_to_use['polyunsaturated_fat']
     total_fat_breakdown = saturated + mono + poly
     
     if total_fat_breakdown > 0:
@@ -464,8 +666,8 @@ def analyze_solution_detailed(quantities, q):
         }
     
     # Electrolytes
-    sodium = q @ nutrient_arrays['sodium']
-    potassium = q @ nutrient_arrays['potassium']
+    sodium = q @ nutrient_arrays_to_use['sodium']
+    potassium = q @ nutrient_arrays_to_use['potassium']
     electrolyte_ratio = sodium / potassium if potassium > 0 else float('inf')
     
     electrolytes = {

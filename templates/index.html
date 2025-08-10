@@ -24,7 +24,12 @@
 <!-- Tabs for different sections -->
 <ul class="nav nav-tabs" id="mainTabs" role="tablist">
     <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="setup-tab" data-bs-toggle="tab" data-bs-target="#setup" type="button">
+        <button class="nav-link active" id="personalization-tab" data-bs-toggle="tab" data-bs-target="#personalization" type="button">
+            <i class="fas fa-user me-2"></i>Personalization
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="setup-tab" data-bs-toggle="tab" data-bs-target="#setup" type="button">
             <i class="fas fa-cog me-2"></i>Setup & Objectives
         </button>
     </li>
@@ -36,8 +41,282 @@
 </ul>
 
 <div class="tab-content" id="mainTabContent">
+    <!-- Personalization Tab -->
+    <div class="tab-pane fade show active" id="personalization" role="tabpanel">
+        <form id="personalizationForm">
+            <div class="row">
+                <!-- Basic Demographics -->
+                <div class="col-lg-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-user-circle me-2"></i>
+                                Basic Demographics
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="age" class="form-label">Age (years)</label>
+                                    <input type="number" class="form-control" id="age" value="30" min="18" max="100" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="gender" class="form-label">Gender</label>
+                                    <select class="form-select" id="gender" required>
+                                        <option value="male">Male</option>
+                                        <option value="female">Female</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="weight" class="form-label">Weight (kg)</label>
+                                    <input type="number" class="form-control" id="weight" value="70" min="30" max="200" step="0.1" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="height" class="form-label">Height (cm)</label>
+                                    <input type="number" class="form-control" id="height" value="170" min="120" max="250" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="activityLevel" class="form-label">Activity Level</label>
+                                <select class="form-select" id="activityLevel" required>
+                                    <option value="sedentary">Sedentary (little or no exercise)</option>
+                                    <option value="lightly_active">Lightly Active (light exercise 1-3 days/week)</option>
+                                    <option value="moderately_active" selected>Moderately Active (moderate exercise 3-5 days/week)</option>
+                                    <option value="very_active">Very Active (hard exercise 6-7 days/week)</option>
+                                    <option value="extremely_active">Extremely Active (very hard exercise, physical job)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Health & Goals -->
+                <div class="col-lg-6">
+                    <div class="card h-100">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-heartbeat me-2"></i>
+                                Health & Goals
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="primaryGoal" class="form-label">Primary Goal</label>
+                                <select class="form-select" id="primaryGoal" required>
+                                    <option value="maintenance" selected>Weight Maintenance</option>
+                                    <option value="weight_loss">Weight Loss</option>
+                                    <option value="muscle_gain">Muscle Gain</option>
+                                    <option value="athletic_performance">Athletic Performance</option>
+                                    <option value="health_optimization">Health Optimization</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="weightGoal" class="form-label">Weight Goal (kg/week)</label>
+                                <input type="number" class="form-control" id="weightGoal" value="0" min="-2" max="2" step="0.1">
+                                <small class="text-muted">Positive for gain, negative for loss, 0 for maintenance</small>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Health Conditions (select all that apply)</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="diabetes">
+                                    <label class="form-check-label" for="diabetes">Diabetes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="heartDisease">
+                                    <label class="form-check-label" for="heartDisease">Heart Disease</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="hypertension">
+                                    <label class="form-check-label" for="hypertension">Hypertension</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="celiac">
+                                    <label class="form-check-label" for="celiac">Celiac Disease</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="lactoseIntolerant">
+                                    <label class="form-check-label" for="lactoseIntolerant">Lactose Intolerance</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dietary Preferences -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">
+                                <i class="fas fa-utensils me-2"></i>
+                                Dietary Preferences & Restrictions
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">Dietary Preferences</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="vegetarian">
+                                        <label class="form-check-label" for="vegetarian">Vegetarian</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="vegan">
+                                        <label class="form-check-label" for="vegan">Vegan</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="keto">
+                                        <label class="form-check-label" for="keto">Ketogenic</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="paleo">
+                                        <label class="form-check-label" for="paleo">Paleo</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="mediterranean">
+                                        <label class="form-check-label" for="mediterranean">Mediterranean</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Food Allergies/Intolerances</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="nutsAllergy">
+                                        <label class="form-check-label" for="nutsAllergy">Tree Nuts</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="peanutsAllergy">
+                                        <label class="form-check-label" for="peanutsAllergy">Peanuts</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="shellfishAllergy">
+                                        <label class="form-check-label" for="shellfishAllergy">Shellfish</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="soyAllergy">
+                                        <label class="form-check-label" for="soyAllergy">Soy</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="wheatAllergy">
+                                        <label class="form-check-label" for="wheatAllergy">Wheat/Gluten</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Genetic Factors (Optional) -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-dna me-2"></i>
+                                Genetic Factors (Optional)
+                            </h5>
+                            <small class="text-light">If you have genetic data, these adjustments can be applied</small>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="vitaminAConversion" class="form-label">Vitamin A Conversion Factor</label>
+                                        <select class="form-select" id="vitaminAConversion">
+                                            <option value="12" selected>Normal (12:1)</option>
+                                            <option value="15">Reduced (15:1)</option>
+                                            <option value="20">Significantly Reduced (20:1)</option>
+                                        </select>
+                                        <small class="text-muted">Affects beta-carotene to vitamin A conversion</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="satFatSensitivity" class="form-label">Saturated Fat Sensitivity</label>
+                                        <select class="form-select" id="satFatSensitivity">
+                                            <option value="1.0" selected>Normal</option>
+                                            <option value="1.5">Increased</option>
+                                            <option value="2.0">High</option>
+                                        </select>
+                                        <small class="text-muted">Genetic sensitivity to saturated fats</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="fiberTarget" class="form-label">Fiber Target Adjustment (g)</label>
+                                        <input type="number" class="form-control" id="fiberTarget" value="0" min="-10" max="20">
+                                        <small class="text-muted">Additional fiber needed based on genetics</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="epaDhaTarget" class="form-label">EPA/DHA Target (mg)</label>
+                                        <input type="number" class="form-control" id="epaDhaTarget" value="0" min="0" max="2000">
+                                        <small class="text-muted">Additional omega-3 needs</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calculate Personalized Targets Button -->
+            <div class="row mt-4">
+                <div class="col-12 text-center">
+                    <button type="submit" class="btn btn-primary btn-lg" id="calculateTargetsBtn">
+                        <i class="fas fa-calculator me-2"></i>
+                        Calculate Personalized Targets
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Personalized Targets Display -->
+        <div id="personalizedTargets" style="display: none;">
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-target me-2"></i>
+                                Your Personalized Nutrition Targets
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 text-center">
+                                    <h3 class="text-primary" id="personalizedCalories">0</h3>
+                                    <p class="text-muted">Daily Calories</p>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <h3 class="text-success" id="personalizedProtein">0g</h3>
+                                    <p class="text-muted">Protein</p>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <h3 class="text-warning" id="personalizedFat">0g</h3>
+                                    <p class="text-muted">Fat</p>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <h3 class="text-info" id="personalizedCarbs">0g</h3>
+                                    <p class="text-muted">Carbohydrates</p>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-success" onclick="$('#setup-tab').tab('show')">
+                                    <i class="fas fa-arrow-right me-2"></i>
+                                    Proceed to Optimization Setup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Setup Tab -->
-    <div class="tab-pane fade show active" id="setup" role="tabpanel">
+    <div class="tab-pane fade" id="setup" role="tabpanel">
         <form id="optimizationForm">
             <div class="row">
                 <!-- Macro Targets -->
@@ -131,7 +410,7 @@
                                 </li>
                                 <li class="mb-2">
                                     <i class="fas fa-check text-success me-2"></i>
-                                    <strong>RDA-based</strong> scoring
+                                    <strong>Personalized</strong> RDA targets
                                 </li>
                                 <li class="mb-2">
                                     <i class="fas fa-check text-success me-2"></i>
@@ -272,9 +551,16 @@
 <script>
 let optimizationResults = null;
 let selectedObjectives = [0, 1, 2, 3]; // Default selection
+let personalizedData = null;
 
-// Handle objective card selection
+// Handle personalization form submission
 $(document).ready(function() {
+    $('#personalizationForm').submit(function(e) {
+        e.preventDefault();
+        calculatePersonalizedTargets();
+    });
+
+    // Handle objective card selection
     $('.objective-card').click(function() {
         const checkbox = $(this).find('input[type="checkbox"]');
         checkbox.prop('checked', !checkbox.prop('checked'));
@@ -324,6 +610,123 @@ $(document).ready(function() {
     updateObjectiveSelection();
 });
 
+function calculatePersonalizedTargets() {
+    // Collect personalization data
+    const personalizationData = {
+        age: parseInt($('#age').val()),
+        gender: $('#gender').val(),
+        weight: parseFloat($('#weight').val()),
+        height: parseInt($('#height').val()),
+        activityLevel: $('#activityLevel').val(),
+        primaryGoal: $('#primaryGoal').val(),
+        weightGoal: parseFloat($('#weightGoal').val()),
+        healthConditions: {
+            diabetes: $('#diabetes').is(':checked'),
+            heartDisease: $('#heartDisease').is(':checked'),
+            hypertension: $('#hypertension').is(':checked'),
+            celiac: $('#celiac').is(':checked'),
+            lactoseIntolerant: $('#lactoseIntolerant').is(':checked')
+        },
+        dietaryPreferences: {
+            vegetarian: $('#vegetarian').is(':checked'),
+            vegan: $('#vegan').is(':checked'),
+            keto: $('#keto').is(':checked'),
+            paleo: $('#paleo').is(':checked'),
+            mediterranean: $('#mediterranean').is(':checked')
+        },
+        allergies: {
+            nuts: $('#nutsAllergy').is(':checked'),
+            peanuts: $('#peanutsAllergy').is(':checked'),
+            shellfish: $('#shellfishAllergy').is(':checked'),
+            soy: $('#soyAllergy').is(':checked'),
+            wheat: $('#wheatAllergy').is(':checked')
+        },
+        geneticFactors: {
+            vitaminAConversion: parseInt($('#vitaminAConversion').val()),
+            satFatSensitivity: parseFloat($('#satFatSensitivity').val()),
+            fiberTarget: parseFloat($('#fiberTarget').val()),
+            epaDhaTarget: parseFloat($('#epaDhaTarget').val())
+        }
+    };
+
+    // Calculate BMR using Mifflin-St Jeor Equation
+    let bmr;
+    if (personalizationData.gender === 'male') {
+        bmr = 10 * personalizationData.weight + 6.25 * personalizationData.height - 5 * personalizationData.age + 5;
+    } else {
+        bmr = 10 * personalizationData.weight + 6.25 * personalizationData.height - 5 * personalizationData.age - 161;
+    }
+
+    // Apply activity multiplier
+    const activityMultipliers = {
+        'sedentary': 1.2,
+        'lightly_active': 1.375,
+        'moderately_active': 1.55,
+        'very_active': 1.725,
+        'extremely_active': 1.9
+    };
+
+    let tdee = bmr * activityMultipliers[personalizationData.activityLevel];
+
+    // Adjust for weight goal
+    const weightGoalAdjustment = personalizationData.weightGoal * 7700 / 7; // 7700 calories per kg
+    tdee += weightGoalAdjustment;
+
+    // Calculate macro targets
+    let protein, fat, carbs;
+    
+    if (personalizationData.primaryGoal === 'muscle_gain') {
+        protein = personalizationData.weight * 2.2; // 2.2g per kg
+        fat = tdee * 0.25 / 9; // 25% of calories
+        carbs = (tdee - protein * 4 - fat * 9) / 4;
+    } else if (personalizationData.primaryGoal === 'weight_loss') {
+        protein = personalizationData.weight * 2.0; // 2.0g per kg
+        fat = tdee * 0.30 / 9; // 30% of calories
+        carbs = (tdee - protein * 4 - fat * 9) / 4;
+    } else {
+        protein = personalizationData.weight * 1.6; // 1.6g per kg
+        fat = tdee * 0.25 / 9; // 25% of calories
+        carbs = (tdee - protein * 4 - fat * 9) / 4;
+    }
+
+    // Adjust for dietary preferences
+    if (personalizationData.dietaryPreferences.keto) {
+        carbs = 50; // Very low carb
+        fat = (tdee - protein * 4 - carbs * 4) / 9;
+    } else if (personalizationData.dietaryPreferences.vegan) {
+        protein = Math.max(protein, personalizationData.weight * 1.8); // Higher protein for vegans
+        carbs = (tdee - protein * 4 - fat * 9) / 4;
+    }
+
+    // Store personalized data
+    personalizedData = {
+        ...personalizationData,
+        targets: {
+            calories: Math.round(tdee),
+            protein: Math.round(protein),
+            fat: Math.round(fat),
+            carbs: Math.round(carbs)
+        }
+    };
+
+    // Update the display
+    $('#personalizedCalories').text(personalizedData.targets.calories);
+    $('#personalizedProtein').text(personalizedData.targets.protein + 'g');
+    $('#personalizedFat').text(personalizedData.targets.fat + 'g');
+    $('#personalizedCarbs').text(personalizedData.targets.carbs + 'g');
+
+    // Update the optimization form with personalized targets
+    $('#calories').val(personalizedData.targets.calories);
+    $('#protein').val(personalizedData.targets.protein);
+    $('#fat').val(personalizedData.targets.fat);
+    $('#carbs').val(personalizedData.targets.carbs);
+
+    // Show the targets
+    $('#personalizedTargets').show();
+    
+    showAlert('Personalized targets calculated successfully!', 'success');
+}
+
 function showAlert(message, type = 'info') {
     const alertHtml = `
         <div class="alert alert-${type} alert-dismissible fade show" role="alert">
@@ -347,7 +750,8 @@ function runOptimization() {
         carbs: parseInt($('#carbs').val()),
         objectives: selectedObjectives,
         population_size: parseInt($('#populationSize').val()),
-        generations: parseInt($('#generations').val())
+        generations: parseInt($('#generations').val()),
+        personalization: personalizedData // Include personalization data
     };
 
     $.ajax({
